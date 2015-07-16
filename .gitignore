@@ -1,0 +1,8 @@
+# vim stuff
+*.un
+*.swp
+*.un~
+
+
+# don't add gems
+*.gem
