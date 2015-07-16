@@ -180,6 +180,7 @@ class Ascii_to_hex_obj
 		def chr_array_to_hex(chr_array)
 				char_int_array = chr_array.map { |c| self.char_to_bit_string(c) }
 				#convert to int
+				#print char_int_array
 				int_rep = char_int_array.join.to_i(2)
 				int_rep.to_s(16)
 		end
@@ -194,7 +195,6 @@ class Ascii_to_hex_obj
 				bit_string = buffer_zeros(bit_string_raw,@bits)
 				bit_array = bit_string.scan(/.{#{@bits}}/)
 			  	
-				#puts "bit array = [ "
 				bit_array.each { |i| yield i }
 				return
 		end
@@ -202,7 +202,7 @@ class Ascii_to_hex_obj
 		def hex_to_ascii_str(hex_str)
         msg_str = ""
 				self.yield_bits(hex_str) { |bs| msg_str << self.bit_string_to_char(bs) }
-				puts msg_str
+				#puts msg_str
 				return msg_str
 		end
 end
@@ -228,7 +228,12 @@ def code_up(msg,alpha,default)
 		return [msg,alpha,msg_f,hex_coding,msgc]
 end
 
-
+def tt
+		 as = Ascii_to_hex_obj.new(alpha="abcdefg",default_char = "X")
+		 msg = "adam wespiser"
+		 hex_coding,msg_f = as.ascii_str_to_hex(msg)
+		 puts msg_f, hex_coding
+end
 
 
 binding.pry
