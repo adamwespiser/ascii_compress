@@ -129,13 +129,17 @@ end
 
 class Ascii_to_hex_obj
 		def initialize(char_set, default_char="X")
-				@chrs = char_set.downcase.uniq
-				if default_char != nil and @chrs.index(default_char) == nil
+				@chrs = char_set.downcase.scan(/.{1}/).uniq.join
+				if @chrs.index(default_char) == nil and default_char != ''
 						@chrs = @chrs + default_char
 				end
 				@len = @chrs.length 
 				@bits = Math.log2(@len + 1).ceil.to_i
 				@default_char = default_char
+		end
+
+		def to_s
+				"Object: Ascii_to_hex_obj\n# bits = #{@bits}, and (2 ** #{@bits} == #{2 ** @bits})\ndefault char = '#{@default_char}'\nchar set len = #{@len}\nchar set = '#{@chrs}'\n========\n"
 		end
 
 		def valid_char?(char)
@@ -153,6 +157,9 @@ class Ascii_to_hex_obj
 								@default_char
 						end
 				end
+			
+				str_fmt_arr.select! { |c| c != '' }
+
 				return str_fmt_arr
 		end
 		def char_to_bit_string(chr)
@@ -205,13 +212,26 @@ end
 
 
 
-def check_coding(msg, alpha)
-		as = Ascii_to_hex_obj.new(alpha)
-		hex_coding,msg = as.ascii_str_to_hex(msg)
+def check_coding(msg="asdf", alpha="asdf",default="X")
+		as = Ascii_to_hex_obj.new(alpha,default_char = default		)
+		puts as
+		hex_coding,msg_f = as.ascii_str_to_hex(msg)
 		msgc = as.hex_to_ascii_str(hex_coding)	
-		puts "msg     = '#{msg}'\nhex     = '#{hex_coding}'\ndecoded = '#{msgc}'\n"
+		puts "msg     = '#{msg}'\nmsg_f   = '#{msg_f}'\nhex     = '#{hex_coding}'\ndecoded = '#{msgc}'\n"
 end
 
+
+def code_up(msg,alpha,default)
+		as = Ascii_to_hex_obj.new(alpha,default_char = default)
+		hex_coding,msg_f = as.ascii_str_to_hex(msg)
+		msgc = as.hex_to_ascii_str(hex_coding)	
+		return [msg,alpha,msg_f,hex_coding,msgc]
+end
+
+
+
+
 binding.pry
+check_coding(msg="asdf ", alpha= "asdf",default='')
 
 
