@@ -1,5 +1,7 @@
 #!/usr/bin/ruby
 
+require 'pry'
+
 
 # AW NOTES:
 #  Usable ascii range (inclusivce) (32 - 126) (' ' - '~')
@@ -121,5 +123,95 @@ def string_to_encoding_via_int_rep(str)
 		hex_sum = sum.to_s(16)
 		return [hex_sum,sum]
 end
+
+
+
+
+class Ascii_to_hex_obj
+		def initialize(char_set, default_char="X")
+				@chrs = char_set.downcase.uniq
+				if default_char != nil and @chrs.index(default_char) == nil
+						@chrs = @chrs + default_char
+				end
+				@len = @chrs.length 
+				@bits = Math.log2(@len + 1).ceil.to_i
+				@default_char = default_char
+		end
+
+		def valid_char?(char)
+				return (@chrs.index(char) != nil)
+		end
+
+		def format_string(str)
+				str = str.force_encoding("UTF-8")
+				raise "must provide an ASCII string to format" if not str.ascii_only?
+				str.downcase!
+				str_fmt_arr = str.scan(/.{1}/).map do |x|
+						if self.valid_char?(x) or @default_char == nil
+								x
+						else
+								@default_char
+						end
+				end
+				return str_fmt_arr
+		end
+		def char_to_bit_string(chr)
+				chr_ord = @chrs.index(chr) + 1
+				bit_string_raw  = chr_ord.to_s(2)
+				return buffer_zeros(bit_string_raw, @bits)
+		end
+
+		def bit_string_to_char(bit_str)
+				int = bit_str.to_i(2)
+				if int.between?(1,@len)
+						return @chrs[int - 1]
+				else 
+						raise "Failed to decode hexstring, index out of range"
+				end
+		end
+
+		def chr_array_to_hex(chr_array)
+				char_int_array = chr_array.map { |c| self.char_to_bit_string(c) }
+				#convert to int
+				int_rep = char_int_array.join.to_i(2)
+				int_rep.to_s(16)
+		end
+
+		def ascii_str_to_hex(str)
+			fmt_array = self.format_string(str)	
+		  return [self.chr_array_to_hex(fmt_array),fmt_array.join]
+		end
+		# yeild bits from hex string
+		def yield_bits(hex_str)
+				bit_string_raw  = hex_str.to_i(16).to_s(2)
+				bit_string = buffer_zeros(bit_string_raw,@bits)
+				bit_array = bit_string.scan(/.{#{@bits}}/)
+			  	
+				#puts "bit array = [ "
+				bit_array.each { |i| yield i }
+				return
+		end
+		
+		def hex_to_ascii_str(hex_str)
+        msg_str = ""
+				self.yield_bits(hex_str) { |bs| msg_str << self.bit_string_to_char(bs) }
+				puts msg_str
+				return msg_str
+		end
+end
+# y_bits(string_to_encoding(all_chars())[0], 7) { |x| puts x}
+
+
+
+
+
+def check_coding(msg, alpha)
+		as = Ascii_to_hex_obj.new(alpha)
+		hex_coding,msg = as.ascii_str_to_hex(msg)
+		msgc = as.hex_to_ascii_str(hex_coding)	
+		puts "msg     = '#{msg}'\nhex     = '#{hex_coding}'\ndecoded = '#{msgc}'\n"
+end
+
+binding.pry
 
 
