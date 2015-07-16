@@ -94,20 +94,6 @@ def conv_deconv(word)
 		return encoding_to_string(string_to_encoding(word)[0])
 end
 
-def test_msgs
-		msgs = [ all_chars(),
-						"aa ",
-						" aa",
-						"\"\"\"",
-						"\'\' " ]
-
-		failed = msgs.select { |msg| msg != conv_deconv(msg) }
-		if failed.length == 0
-				puts "all #{msgs.length} tests passed\n"
-		else 
-				failed.each {|msg| puts "FAILED: #{msg}\n"}
-		end
-end
 
 def compare_to_pack(str=all_chars())
 		upack_len =  str.unpack("h*")[0].length
