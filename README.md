@@ -15,6 +15,7 @@ hex_coding,format_msg = as.ascii_str_to_hex(msg)
 format_msg => "adaXXXeXXXXeX"
 hex_coding => "1418885888858"
 msgc = as.hex_to_ascii_str(hex_coding)
+msgc = "adaXXXeXXXXeX"
 ```
 
 
