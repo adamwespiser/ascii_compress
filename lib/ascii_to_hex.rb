@@ -4,7 +4,163 @@ require 'pry'
 
 
 # AW NOTES:
-#  Usable ascii range (inclusivce) (32 - 126) (' ' - '~')
+# TODO: add feature to remove need for downcase
+#  add feature so the user can initialize a standard lib 
+#  based on the number of bits they would like to encode 
+#  ascii characters into. (Example, 5 bits for is used for 
+#  std_alpha set, 7 bits is actually all of ascii)
+
+# object for converting ascii -> hex -> ascii
+# specify the object using the character set that 
+# will be encoding, along with a default char, 
+# then get an object that can be used for converting
+# between hex, and ascii messages
+# Note: by default characters are converted from upper to lower case
+
+class Ascii_to_hex_obj
+
+		attr_reader :len, :bits, :default_char, :chrs
+
+		# standard alpha bit that is encoded with 5 bits
+		def std_alpha
+				# take all lower case alpha
+				lower = (97..122).collect  { |x| x.chr }.join
+				lower += ".!? "
+				return lower
+		end
+
+
+
+
+		def initialize(char_set=self.std_alpha, default_char="X")
+				# TODO add argument on downcase conversion rules(enforce = T/F)
+				@chrs = char_set.downcase.scan(/.{1}/).uniq.join
+				if @chrs.index(default_char) == nil and default_char != ''
+						@chrs = @chrs + default_char
+				end
+				@len = @chrs.length 
+				# char indexes start at 1, to avoid leading 0's
+				# which are chopped of on string -> int functions 
+				# provided by the OS
+				@bits = Math.log2(@len + 1).ceil.to_i
+				@default_char = default_char
+		end
+
+		def to_s
+				"Object: Ascii_to_hex_obj\n# bits = #{@bits}, and (2 ** #{@bits} == #{2 ** @bits})\ndefault char = '#{@default_char}'\nchar set len = #{@len}\nchar set = '#{@chrs}'\n========\n"
+		end
+
+		def valid_char?(char)
+				return (@chrs.index(char) != nil)
+		end
+
+		def format_string(str)
+				str = str.force_encoding("UTF-8")
+				raise "must provide an ASCII string to format" if not str.ascii_only?
+				# TODO downcase
+				str.downcase!
+				# break string into character
+				str_fmt_arr = str.scan(/.{1}/).map do |x|
+						if self.valid_char?(x) or @default_char == nil
+								x
+						else
+								@default_char
+						end
+				end
+			
+				# remove all default chars set to ''
+				str_fmt_arr.select! { |c| c != '' }
+
+				return str_fmt_arr
+		end
+		def char_to_bit_string(chr)
+				# get the index of the character from the alphabet
+				chr_ord = @chrs.index(chr) + 1
+				# convert to binary
+				bit_string_raw  = chr_ord.to_s(2)
+				return buffer_zeros(bit_string_raw, @bits)
+		end
+
+		def bit_string_to_char(bit_str)
+				int = bit_str.to_i(2)
+				# check to make sure number is handled by the lib,
+				# if not, throw an error
+				if int.between?(1,@len)
+						return @chrs[int - 1]
+				else 
+						raise "Failed to decode hexstring, index out of range"
+				end
+		end
+
+		def chr_array_to_hex(chr_array)
+				# convert encoded char to bitstring
+				char_int_array = chr_array.map { |c| self.char_to_bit_string(c) }
+				#convert to int
+				#print char_int_array
+				# take the 
+				# convert to base16 via int representation
+				int_rep = char_int_array.join.to_i(2)
+				int_rep.to_s(16)
+		end
+
+		def ascii_str_to_hex(str)
+			fmt_array = self.format_string(str)	
+			# return the encoded string, along with the formatted string
+			# so the user can know what will be decoded
+		  return [self.chr_array_to_hex(fmt_array),fmt_array.join]
+		end
+
+		# iterator method that yeilds bit string from encoded
+		# hex 
+		def yield_bits(hex_str)
+				bit_string_raw  = hex_str.to_i(16).to_s(2)
+				bit_string = buffer_zeros(bit_string_raw,@bits)
+				bit_array = bit_string.scan(/.{#{@bits}}/)
+			  	
+				bit_array.each { |i| yield i }
+				return
+		end
+		
+		# convert hex encoded msg to alphabet
+		def hex_to_ascii_str(hex_str)
+        msg_str = ""
+				self.yield_bits(hex_str) { |bs| msg_str << self.bit_string_to_char(bs) }
+				#puts msg_str
+				return msg_str
+		end
+end
+# y_bits(string_to_encoding(all_chars())[0], 7) { |x| puts x}
+
+
+
+
+# basic sanity check
+def check_coding(msg="asdf", alpha="asdf",default="X")
+		as = Ascii_to_hex_obj.new(alpha,default_char = default		)
+		puts as
+		hex_coding,msg_f = as.ascii_str_to_hex(msg)
+		msgc = as.hex_to_ascii_str(hex_coding)	
+		puts "msg     = '#{msg}'\nmsg_f   = '#{msg_f}'\nhex     = '#{hex_coding}'\ndecoded = '#{msgc}'\n"
+end
+
+
+def code_up(msg,alpha,default)
+		as = Ascii_to_hex_obj.new(alpha,default_char = default)
+		hex_coding,msg_f = as.ascii_str_to_hex(msg)
+		msgc = as.hex_to_ascii_str(hex_coding)	
+		return [msg,alpha,msg_f,hex_coding,msgc]
+end
+
+def tt
+		 as = Ascii_to_hex_obj.new(alpha="abcdefg",default_char = "X")
+		 msg = "adam wespiser"
+		 hex_coding,msg_f = as.ascii_str_to_hex(msg)
+		 puts msg_f, hex_coding
+end
+
+
+#binding.pry
+check_coding(msg="asdf ", alpha= "asdf",default='')
 
 
 # convert a string to an array of ints representing the ascii code(0-31 are command keys)
@@ -123,132 +279,4 @@ def string_to_encoding_via_int_rep(str)
 		hex_sum = sum.to_s(16)
 		return [hex_sum,sum]
 end
-
-
-
-
-class Ascii_to_hex_obj
-
-		attr_reader :len, :bits, :default_char, :chrs
-
-		def std_alpha
-				lower = (97..122).collect  { |x| x.chr }.join
-				lower += ".!? "
-				return lower
-		end
-
-
-
-
-		def initialize(char_set=self.std_alpha, default_char="X")
-				@chrs = char_set.downcase.scan(/.{1}/).uniq.join
-				if @chrs.index(default_char) == nil and default_char != ''
-						@chrs = @chrs + default_char
-				end
-				@len = @chrs.length 
-				@bits = Math.log2(@len + 1).ceil.to_i
-				@default_char = default_char
-		end
-
-		def to_s
-				"Object: Ascii_to_hex_obj\n# bits = #{@bits}, and (2 ** #{@bits} == #{2 ** @bits})\ndefault char = '#{@default_char}'\nchar set len = #{@len}\nchar set = '#{@chrs}'\n========\n"
-		end
-
-		def valid_char?(char)
-				return (@chrs.index(char) != nil)
-		end
-
-		def format_string(str)
-				str = str.force_encoding("UTF-8")
-				raise "must provide an ASCII string to format" if not str.ascii_only?
-				str.downcase!
-				str_fmt_arr = str.scan(/.{1}/).map do |x|
-						if self.valid_char?(x) or @default_char == nil
-								x
-						else
-								@default_char
-						end
-				end
-			
-				str_fmt_arr.select! { |c| c != '' }
-
-				return str_fmt_arr
-		end
-		def char_to_bit_string(chr)
-				chr_ord = @chrs.index(chr) + 1
-				bit_string_raw  = chr_ord.to_s(2)
-				return buffer_zeros(bit_string_raw, @bits)
-		end
-
-		def bit_string_to_char(bit_str)
-				int = bit_str.to_i(2)
-				if int.between?(1,@len)
-						return @chrs[int - 1]
-				else 
-						raise "Failed to decode hexstring, index out of range"
-				end
-		end
-
-		def chr_array_to_hex(chr_array)
-				char_int_array = chr_array.map { |c| self.char_to_bit_string(c) }
-				#convert to int
-				#print char_int_array
-				int_rep = char_int_array.join.to_i(2)
-				int_rep.to_s(16)
-		end
-
-		def ascii_str_to_hex(str)
-			fmt_array = self.format_string(str)	
-		  return [self.chr_array_to_hex(fmt_array),fmt_array.join]
-		end
-		# yeild bits from hex string
-		def yield_bits(hex_str)
-				bit_string_raw  = hex_str.to_i(16).to_s(2)
-				bit_string = buffer_zeros(bit_string_raw,@bits)
-				bit_array = bit_string.scan(/.{#{@bits}}/)
-			  	
-				bit_array.each { |i| yield i }
-				return
-		end
-		
-		def hex_to_ascii_str(hex_str)
-        msg_str = ""
-				self.yield_bits(hex_str) { |bs| msg_str << self.bit_string_to_char(bs) }
-				#puts msg_str
-				return msg_str
-		end
-end
-# y_bits(string_to_encoding(all_chars())[0], 7) { |x| puts x}
-
-
-
-
-
-def check_coding(msg="asdf", alpha="asdf",default="X")
-		as = Ascii_to_hex_obj.new(alpha,default_char = default		)
-		puts as
-		hex_coding,msg_f = as.ascii_str_to_hex(msg)
-		msgc = as.hex_to_ascii_str(hex_coding)	
-		puts "msg     = '#{msg}'\nmsg_f   = '#{msg_f}'\nhex     = '#{hex_coding}'\ndecoded = '#{msgc}'\n"
-end
-
-
-def code_up(msg,alpha,default)
-		as = Ascii_to_hex_obj.new(alpha,default_char = default)
-		hex_coding,msg_f = as.ascii_str_to_hex(msg)
-		msgc = as.hex_to_ascii_str(hex_coding)	
-		return [msg,alpha,msg_f,hex_coding,msgc]
-end
-
-def tt
-		 as = Ascii_to_hex_obj.new(alpha="abcdefg",default_char = "X")
-		 msg = "adam wespiser"
-		 hex_coding,msg_f = as.ascii_str_to_hex(msg)
-		 puts msg_f, hex_coding
-end
-
-
-binding.pry
-check_coding(msg="asdf ", alpha= "asdf",default='')
-
 

@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'ascii_to_hex'
-  s.version     = '0.0.1'
+  s.version     = '0.0.2'
   s.date        = '2015-07-15'
   s.summary     = "A library for converting between ascii and hex string representation"
   s.description = "A lib for shortening ascii"
