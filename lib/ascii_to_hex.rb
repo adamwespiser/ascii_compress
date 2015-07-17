@@ -128,7 +128,19 @@ end
 
 
 class Ascii_to_hex_obj
-		def initialize(char_set, default_char="X")
+
+		attr_reader :len, :bits, :default_char, :chrs
+
+		def std_alpha
+				lower = (97..122).collect  { |x| x.chr }.join
+				lower += ".!? "
+				return lower
+		end
+
+
+
+
+		def initialize(char_set=self.std_alpha, default_char="X")
 				@chrs = char_set.downcase.scan(/.{1}/).uniq.join
 				if @chrs.index(default_char) == nil and default_char != ''
 						@chrs = @chrs + default_char
